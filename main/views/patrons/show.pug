@@ -1,0 +1,18 @@
+extends ../layout
+
+block content
+  h1 Patron: #{patron.first_name} #{patron.last_name}
+  p
+    strong Address:
+    |  #{patron.address}
+  p
+    strong Email:
+    |  #{patron.email}
+  p
+    strong Library ID:
+    |  #{patron.library_id}
+  p
+    strong Zip:
+    |  #{patron.zip_code}
+  p
+    a.button(href='/patrons/' + patron.id + '/edit') Update

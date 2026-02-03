@@ -1,0 +1,15 @@
+extends ../layout
+
+block content
+  h1 Book: #{book.title}
+  p
+    strong Author:
+    |  #{book.author}
+  p
+    strong Genre:
+    |  #{book.genre}
+  p
+    strong First Published:
+    |  #{book.first_published || '—'}
+  p
+    a.button(href='/books/' + book.id + '/edit') Update

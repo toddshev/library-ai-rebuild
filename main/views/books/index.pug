@@ -1,0 +1,38 @@
+extends ../layout
+
+block content
+  h1 Books
+  div.create-search-container
+    a.button(href='/books/new') Create New Book
+    form(method='get')
+      input#search(type='search', name='search', placeholder='Search...', value=search)
+      button.search-btn(type='submit') Search
+  table
+    thead
+      tr
+        th Title
+        th Author
+        th Genre
+        th Year Released
+    tbody
+      each book in books
+        tr
+          td
+            a(href='/books/' + book.id)= book.title
+          td= book.author
+          td= book.genre
+          td= book.first_published || '—'
+  if totalPages > 1
+    nav.pagination
+      ul
+        if page > 1
+          li
+            a(href='?page=' + (page - 1) + (search ? '&search=' + search : '')) Previous
+        - let p = 1
+        while p <= totalPages
+          li(class=(p === page ? 'active' : ''))
+            a(href='?page=' + p + (search ? '&search=' + search : ''))= p
+          - p++
+        if page < totalPages
+          li
+            a(href='?page=' + (page + 1) + (search ? '&search=' + search : '')) Next
