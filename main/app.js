@@ -9,6 +9,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var booksRouter = require('./routes/books');
 var patronsRouter = require('./routes/patrons');
+var loansRouter = require('./routes/loans');
 var db = require('./models');
 
 var app = express();
@@ -28,6 +29,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/books', booksRouter);
 app.use('/patrons', patronsRouter);
+app.use('/loans', loansRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

@@ -1,0 +1,29 @@
+extends ../layout
+
+block content
+  h1 Return Book
+  p
+    strong Book Title:
+    |  #{loan.Book ? loan.Book.title : ''}
+  p
+    strong Loaned By:
+    |  #{loan.Patron ? (loan.Patron.first_name + ' ' + loan.Patron.last_name) : ''}
+  p
+    strong Loaned On:
+    |  #{loan.loaned_on}
+  p
+    strong Return By:
+    |  #{loan.return_by}
+  form(method='post', action='/loans/' + loan.id + '/return')
+    input(type='hidden', name='_method', value='PUT')
+    if errors && errors.length
+      h2.error Oooops!
+      ul.error
+        each msg in errors
+          li= msg
+    p
+      label(for='returned_on') Returned on:
+      - var defaultReturned = loan.returned_on || (new Date().toISOString().slice(0, 10))
+      input#returned_on(name='returned_on', type='date', value=defaultReturned)
+    p
+      input(type='submit', value='Return Book')

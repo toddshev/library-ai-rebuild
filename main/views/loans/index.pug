@@ -1,0 +1,54 @@
+extends ../layout
+
+block content
+  h1= filter === 'overdue' ? 'Overdue Loans' : filter === 'active' ? 'Active Loans' : 'Loans'
+  div.create-search-container
+    a.button(href='/loans/new') Create New Loan
+    form(method='get')
+      input(type='hidden', name='filter', value=filter)
+      input#search(type='search', name='search', placeholder='Search...', value=search)
+      button.search-btn(type='submit') Search
+  p.filters
+    strong Filters:
+    |  
+    a(href='/loans?filter=all', class=(filter === 'all' ? 'active' : '')) All
+    |  |
+    a(href='/loans/overdue', class=(filter === 'overdue' ? 'active' : '')) Overdue
+    |  |
+    a(href='/loans/active', class=(filter === 'active' ? 'active' : '')) Active
+  table
+    thead
+      tr
+        th Book
+        th Patron
+        th Loaned on
+        th Return by
+        th Returned on
+        th Action
+    tbody
+      each loan in loans
+        tr
+          td
+            a(href='/books/' + loan.Book.id)= loan.Book.title
+          td
+            a(href='/patrons/' + loan.Patron.id)= loan.Patron.first_name + ' ' + loan.Patron.last_name
+          td= loan.loaned_on
+          td= loan.return_by
+          td= loan.returned_on || '—'
+          td
+            if !loan.returned_on
+              a.button(href='/loans/' + loan.id + '/return') Return Book
+  if totalPages > 1
+    nav.pagination
+      ul
+        if page > 1
+          li
+            a(href='?page=' + (page - 1) + '&filter=' + filter) Previous
+        - let p = 1
+        while p <= totalPages
+          li(class=(p === page ? 'active' : ''))
+            a(href='?page=' + p + '&filter=' + filter)= p
+          - p++
+        if page < totalPages
+          li
+            a(href='?page=' + (page + 1) + '&filter=' + filter) Next

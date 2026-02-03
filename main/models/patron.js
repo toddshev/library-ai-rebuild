@@ -94,8 +94,7 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Patron.associate = function(models) {
-    // Define associations here
-    // Example: Patron.hasMany(models.Loan, { foreignKey: 'patronId', as: 'loans' });
+    Patron.hasMany(models.Loan, { foreignKey: 'patron_id', as: 'loans' });
   };
 
   return Patron;

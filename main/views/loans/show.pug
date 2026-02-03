@@ -1,0 +1,26 @@
+extends ../layout
+
+block content
+  h1 Loan
+  p
+    strong Book:
+    |  
+    a(href='/books/' + loan.Book.id)= loan.Book.title
+  p
+    strong Patron:
+    |  
+    a(href='/patrons/' + loan.Patron.id)= loan.Patron.first_name + ' ' + loan.Patron.last_name
+  p
+    strong Loaned on:
+    |  #{loan.loaned_on}
+  p
+    strong Return by:
+    |  #{loan.return_by}
+  p
+    strong Returned on:
+    |  #{loan.returned_on || '—'}
+  p
+    a.button(href='/loans/' + loan.id + '/edit') Edit
+    if !loan.returned_on
+      |  
+      a.button(href='/loans/' + loan.id + '/return') Return Book
