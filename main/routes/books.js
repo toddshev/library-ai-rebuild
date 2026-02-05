@@ -11,11 +11,17 @@ var listBooks = async function (req, res, next) {
     const offset = (Number(page) - 1) * limit;
     const where = {};
     if (search && search.trim()) {
-      const { Op } = require('sequelize');
+      const Op = db.Sequelize.Op;
+      const seq = db.sequelize;
+      const term = search.trim();
       where[Op.or] = [
-        { title: { [Op.like]: '%' + search.trim() + '%' } },
-        { author: { [Op.like]: '%' + search.trim() + '%' } },
-        { genre: { [Op.like]: '%' + search.trim() + '%' } }
+        { title: { [Op.like]: '%' + term + '%' } },
+        { author: { [Op.like]: '%' + term + '%' } },
+        { genre: { [Op.like]: '%' + term + '%' } },
+        seq.where(
+          seq.cast(seq.col('first_published'), 'VARCHAR'),
+          { [Op.like]: '%' + term + '%' }
+        )
       ];
     }
     const { count, rows: books } = await db.Book.findAndCountAll({
@@ -25,7 +31,7 @@ var listBooks = async function (req, res, next) {
       order: [['title', 'ASC']]
     });
     const totalPages = Math.ceil(count / limit) || 1;
-    res.render('books/index', {
+    res.render('books/all_books', {
       books,
       search: search || '',
       page: Number(page),
@@ -41,7 +47,7 @@ router.get('', listBooks);
 
 /** GET /books/new - new book form (must be before /:id so "new" isn't treated as id) */
 router.get('/new', function (req, res) {
-  res.render('books/new', { book: {}, errors: [] });
+  res.render('books/new_book', { book: {}, errors: [] });
 });
 
 /** POST /books - create book */
@@ -57,7 +63,7 @@ router.post('/', async function (req, res, next) {
   } catch (err) {
     if (err.name === 'SequelizeValidationError') {
       const errors = err.errors.map(e => e.message);
-      return res.status(422).render('books/new', {
+      return res.status(422).render('books/new_book', {
         book: req.body,
         errors
       });
@@ -82,7 +88,7 @@ router.get('/:id/edit', async function (req, res, next) {
   try {
     const book = await db.Book.findByPk(req.params.id);
     if (!book) return next(createError(404, 'Book not found'));
-    res.render('books/edit', { book, errors: [] });
+    res.render('books/update_book', { book, errors: [] });
   } catch (err) {
     next(err);
   }
@@ -104,7 +110,7 @@ router.put('/:id', async function (req, res, next) {
     if (err.name === 'SequelizeValidationError') {
       const errors = err.errors.map(e => e.message);
       const book = await db.Book.findByPk(req.params.id);
-      return res.status(422).render('books/edit', {
+      return res.status(422).render('books/update_book', {
         book: { ...book.toJSON(), ...req.body },
         errors
       });

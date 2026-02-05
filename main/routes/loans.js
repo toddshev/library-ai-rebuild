@@ -4,12 +4,13 @@ var db = require('../models');
 var createError = require('http-errors');
 var Op = db.Sequelize.Op;
 
-/** GET /loans - list loans (filter: all | overdue | active) */
+/** GET /loans - list loans (filter: all | overdue | active), optional search */
 var listLoans = async function (req, res, next) {
   try {
     const { filter = 'all', search, page = 1 } = req.query;
     const limit = 10;
     const offset = (Number(page) - 1) * limit;
+    const seq = db.sequelize;
     const where = {};
     if (filter === 'overdue') {
       where.returned_on = null;
@@ -17,18 +18,42 @@ var listLoans = async function (req, res, next) {
     } else if (filter === 'active') {
       where.returned_on = null;
     }
+    if (search && search.trim()) {
+      const term = search.trim();
+      const searchOr = [
+        { '$Book.title$': { [Op.like]: '%' + term + '%' } },
+        { '$Patron.first_name$': { [Op.like]: '%' + term + '%' } },
+        { '$Patron.last_name$': { [Op.like]: '%' + term + '%' } },
+        seq.where(seq.cast(seq.col('loaned_on'), 'VARCHAR'), { [Op.like]: '%' + term + '%' }),
+        seq.where(seq.cast(seq.col('return_by'), 'VARCHAR'), { [Op.like]: '%' + term + '%' }),
+        seq.where(seq.cast(seq.col('returned_on'), 'VARCHAR'), { [Op.like]: '%' + term + '%' })
+      ];
+      const searchWhere = { [Op.or]: searchOr };
+      if (filter === 'overdue' || filter === 'active') {
+        const filterWhere = filter === 'overdue'
+          ? { returned_on: null, return_by: { [Op.lt]: new Date() } }
+          : { returned_on: null };
+        where[Op.and] = [filterWhere, searchWhere];
+        delete where.returned_on;
+        delete where.return_by;
+      } else {
+        Object.assign(where, searchWhere);
+      }
+    }
+    const includeOpts = [
+      { model: db.Book, as: 'Book', attributes: ['id', 'title'], required: !(search && search.trim()) },
+      { model: db.Patron, as: 'Patron', attributes: ['id', 'first_name', 'last_name'], required: !(search && search.trim()) }
+    ];
     const { count, rows: loans } = await db.Loan.findAndCountAll({
       where,
       limit,
       offset,
       order: [['loaned_on', 'DESC']],
-      include: [
-        { model: db.Book, as: 'Book', attributes: ['id', 'title'] },
-        { model: db.Patron, as: 'Patron', attributes: ['id', 'first_name', 'last_name'] }
-      ]
+      include: includeOpts,
+      subQuery: false
     });
     const totalPages = Math.ceil(count / limit) || 1;
-    res.render('loans/index', {
+    res.render('loans/all_loans', {
       loans,
       filter: filter,
       search: search || '',
@@ -50,7 +75,14 @@ router.get('/new', async function (req, res, next) {
       db.Book.findAll({ order: [['title', 'ASC']] }),
       db.Patron.findAll({ order: [['last_name', 'ASC'], ['first_name', 'ASC']] })
     ]);
-    res.render('loans/new', { loan: {}, books, patrons, errors: [] });
+    const today = new Date();
+    const returnBy = new Date(today);
+    returnBy.setDate(returnBy.getDate() + 7);
+    const loan = {
+      loaned_on: today.toISOString().slice(0, 10),
+      return_by: returnBy.toISOString().slice(0, 10)
+    };
+    res.render('loans/new_loan', { loan, books, patrons, errors: [] });
   } catch (err) {
     next(err);
   }
@@ -73,7 +105,7 @@ router.post('/', async function (req, res, next) {
         db.Book.findAll({ order: [['title', 'ASC']] }),
         db.Patron.findAll({ order: [['last_name', 'ASC'], ['first_name', 'ASC']] })
       ]).catch(() => [[], []]);
-      return res.status(422).render('loans/new', {
+      return res.status(422).render('loans/new_loan', {
         loan: req.body,
         books: books || [],
         patrons: patrons || [],
@@ -122,7 +154,7 @@ router.get('/:id/edit', async function (req, res, next) {
       ]
     });
     if (!loan) return next(createError(404, 'Loan not found'));
-    res.render('loans/edit', { loan, errors: [] });
+    res.render('loans/update_loan', { loan, errors: [] });
   } catch (err) {
     next(err);
   }
@@ -149,7 +181,7 @@ router.put('/:id', async function (req, res, next) {
         ]
       });
       const loanData = { ...loanWithBody.toJSON(), ...req.body };
-      return res.status(422).render('loans/edit', {
+      return res.status(422).render('loans/update_loan', {
         loan: loanData,
         errors
       });
@@ -168,7 +200,7 @@ router.get('/:id/return', async function (req, res, next) {
       ]
     });
     if (!loan) return next(createError(404, 'Loan not found'));
-    res.render('loans/return', { loan, errors: [] });
+    res.render('loans/return_book', { loan, errors: [] });
   } catch (err) {
     next(err);
   }
@@ -191,7 +223,7 @@ router.put('/:id/return', async function (req, res, next) {
           { model: db.Patron, as: 'Patron' }
         ]
       });
-      return res.status(422).render('loans/return', {
+      return res.status(422).render('loans/return_book', {
         loan: loanWithAssoc,
         errors
       });

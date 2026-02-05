@@ -11,12 +11,22 @@ var listPatrons = async function (req, res, next) {
     const offset = (Number(page) - 1) * limit;
     const where = {};
     if (search && search.trim()) {
-      const { Op } = require('sequelize');
+      const Op = db.Sequelize.Op;
+      const seq = db.sequelize;
+      const term = search.trim();
       where[Op.or] = [
-        { first_name: { [Op.like]: '%' + search.trim() + '%' } },
-        { last_name: { [Op.like]: '%' + search.trim() + '%' } },
-        { email: { [Op.like]: '%' + search.trim() + '%' } },
-        { address: { [Op.like]: '%' + search.trim() + '%' } }
+        { first_name: { [Op.like]: '%' + term + '%' } },
+        { last_name: { [Op.like]: '%' + term + '%' } },
+        { email: { [Op.like]: '%' + term + '%' } },
+        { address: { [Op.like]: '%' + term + '%' } },
+        seq.where(
+          seq.cast(seq.col('library_id'), 'VARCHAR'),
+          { [Op.like]: '%' + term + '%' }
+        ),
+        seq.where(
+          seq.cast(seq.col('zip_code'), 'VARCHAR'),
+          { [Op.like]: '%' + term + '%' }
+        )
       ];
     }
     const { count, rows: patrons } = await db.Patron.findAndCountAll({
@@ -26,7 +36,7 @@ var listPatrons = async function (req, res, next) {
       order: [['last_name', 'ASC'], ['first_name', 'ASC']]
     });
     const totalPages = Math.ceil(count / limit) || 1;
-    res.render('patrons/index', {
+    res.render('patrons/all_patrons', {
       patrons,
       search: search || '',
       page: Number(page),
@@ -42,7 +52,7 @@ router.get('', listPatrons);
 
 /** GET /patrons/new - new patron form (must be before /:id) */
 router.get('/new', function (req, res) {
-  res.render('patrons/new', { patron: {}, errors: [] });
+  res.render('patrons/new_patron', { patron: {}, errors: [] });
 });
 
 /** POST /patrons - create patron */
@@ -60,7 +70,7 @@ router.post('/', async function (req, res, next) {
   } catch (err) {
     if (err.name === 'SequelizeValidationError') {
       const errors = err.errors.map(e => e.message);
-      return res.status(422).render('patrons/new', {
+      return res.status(422).render('patrons/new_patron', {
         patron: req.body,
         errors
       });
@@ -83,9 +93,18 @@ router.get('/:id', async function (req, res, next) {
 /** GET /patrons/:id/edit - edit patron form */
 router.get('/:id/edit', async function (req, res, next) {
   try {
-    const patron = await db.Patron.findByPk(req.params.id);
+    const patron = await db.Patron.findByPk(req.params.id, {
+      include: [
+        {
+          model: db.Loan,
+          as: 'loans',
+          include: [{ model: db.Book, as: 'Book', attributes: ['id', 'title'] }]
+        }
+      ]
+    });
     if (!patron) return next(createError(404, 'Patron not found'));
-    res.render('patrons/edit', { patron, errors: [] });
+    const loans = (patron.loans || []).sort((a, b) => (b.loaned_on || '').localeCompare(a.loaned_on || ''));
+    res.render('patrons/update_patron', { patron, loans, errors: [] });
   } catch (err) {
     next(err);
   }
@@ -108,9 +127,19 @@ router.put('/:id', async function (req, res, next) {
   } catch (err) {
     if (err.name === 'SequelizeValidationError') {
       const errors = err.errors.map(e => e.message);
-      const patron = await db.Patron.findByPk(req.params.id);
-      return res.status(422).render('patrons/edit', {
-        patron: { ...patron.toJSON(), ...req.body },
+      const patronWithLoans = await db.Patron.findByPk(req.params.id, {
+        include: [
+          {
+            model: db.Loan,
+            as: 'loans',
+            include: [{ model: db.Book, as: 'Book', attributes: ['id', 'title'] }]
+          }
+        ]
+      });
+      const loans = patronWithLoans ? (patronWithLoans.loans || []).sort((a, b) => (b.loaned_on || '').localeCompare(a.loaned_on || '')) : [];
+      return res.status(422).render('patrons/update_patron', {
+        patron: { ...patronWithLoans.toJSON(), ...req.body },
+        loans,
         errors
       });
     }

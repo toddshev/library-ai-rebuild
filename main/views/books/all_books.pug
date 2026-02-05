@@ -22,6 +22,9 @@ block content
           td= book.author
           td= book.genre
           td= book.first_published || '—'
+      if books.length === 0
+        tr
+          td(colspan='4').no-results No Results Found
   if totalPages > 1
     nav.pagination
       ul
