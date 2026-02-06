@@ -8,14 +8,15 @@ block content
       input(type='hidden', name='filter', value=filter)
       input#search(type='search', name='search', placeholder='Search...', value=search)
       button.search-btn(type='submit') Search
+  - const searchQ = search ? '&search=' + encodeURIComponent(search) : ''
   p.filters
     strong Filters:
     |  
-    a(href='/loans?filter=all', class=(filter === 'all' ? 'active' : '')) All
+    a(href='/loans?filter=all' + searchQ, class=(filter === 'all' ? 'active' : '')) All
     |  |
-    a(href='/loans/overdue', class=(filter === 'overdue' ? 'active' : '')) Overdue
+    a(href='/loans?filter=overdue' + searchQ, class=(filter === 'overdue' ? 'active' : '')) Overdue
     |  |
-    a(href='/loans/active', class=(filter === 'active' ? 'active' : '')) Active
+    a(href='/loans?filter=active' + searchQ, class=(filter === 'active' ? 'active' : '')) Active
   table
     thead
       tr
@@ -38,17 +39,20 @@ block content
           td
             if !loan.returned_on
               a.button(href='/loans/' + loan.id + '/return') Return Book
+      if loans.length === 0
+        tr
+          td(colspan='6').no-results= search ? 'No Matches Found' : 'No Results Found'
   if totalPages > 1
     nav.pagination
       ul
         if page > 1
           li
-            a(href='?page=' + (page - 1) + '&filter=' + filter) Previous
+            a(href='?page=' + (page - 1) + '&filter=' + filter + (search ? '&search=' + encodeURIComponent(search) : '')) Previous
         - let p = 1
         while p <= totalPages
           li(class=(p === page ? 'active' : ''))
-            a(href='?page=' + p + '&filter=' + filter)= p
+            a(href='?page=' + p + '&filter=' + filter + (search ? '&search=' + encodeURIComponent(search) : ''))= p
           - p++
         if page < totalPages
           li
-            a(href='?page=' + (page + 1) + '&filter=' + filter) Next
+            a(href='?page=' + (page + 1) + '&filter=' + filter + (search ? '&search=' + encodeURIComponent(search) : '')) Next

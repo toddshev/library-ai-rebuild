@@ -4,12 +4,13 @@ var db = require('../models');
 var createError = require('http-errors');
 var Op = db.Sequelize.Op;
 
-/** GET /loans - list loans (filter: all | overdue | active) */
+/** GET /loans - list loans (filter: all | overdue | active), search across loan + book + patron */
 var listLoans = async function (req, res, next) {
   try {
     const { filter = 'all', search, page = 1 } = req.query;
     const limit = 10;
     const offset = (Number(page) - 1) * limit;
+    const seq = db.sequelize;
     const where = {};
     if (filter === 'overdue') {
       where.returned_on = null;
@@ -17,15 +18,36 @@ var listLoans = async function (req, res, next) {
     } else if (filter === 'active') {
       where.returned_on = null;
     }
+    if (search && search.trim()) {
+      const term = search.trim();
+      const orConditions = [
+        seq.where(seq.cast(seq.col('loaned_on'), 'TEXT'), { [Op.like]: '%' + term + '%' }),
+        seq.where(seq.cast(seq.col('return_by'), 'TEXT'), { [Op.like]: '%' + term + '%' }),
+        seq.where(seq.cast(seq.col('returned_on'), 'TEXT'), { [Op.like]: '%' + term + '%' }),
+        { '$Book.title$': { [Op.like]: '%' + term + '%' } },
+        { '$Patron.first_name$': { [Op.like]: '%' + term + '%' } },
+        { '$Patron.last_name$': { [Op.like]: '%' + term + '%' } },
+        { '$Patron.email$': { [Op.like]: '%' + term + '%' } },
+        { '$Patron.address$': { [Op.like]: '%' + term + '%' } },
+        { '$Patron.library_id$': { [Op.like]: '%' + term + '%' } }
+      ];
+      const idNum = parseInt(term, 10);
+      if (!isNaN(idNum) && String(idNum) === term) {
+        orConditions.push({ book_id: idNum }, { patron_id: idNum });
+      }
+      where[Op.or] = orConditions;
+    }
+    const include = [
+      { model: db.Book, as: 'Book', attributes: ['id', 'title'], required: !!where[Op.or] },
+      { model: db.Patron, as: 'Patron', attributes: ['id', 'first_name', 'last_name', 'email', 'library_id'], required: !!where[Op.or] }
+    ];
     const { count, rows: loans } = await db.Loan.findAndCountAll({
       where,
       limit,
       offset,
       order: [['loaned_on', 'DESC']],
-      include: [
-        { model: db.Book, as: 'Book', attributes: ['id', 'title'] },
-        { model: db.Patron, as: 'Patron', attributes: ['id', 'first_name', 'last_name'] }
-      ]
+      include,
+      distinct: true
     });
     const totalPages = Math.ceil(count / limit) || 1;
     res.render('loans/all_loans', {
