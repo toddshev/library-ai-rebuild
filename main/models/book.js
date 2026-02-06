@@ -55,18 +55,10 @@ module.exports = (sequelize, DataTypes) => {
           msg: `First published year cannot be greater than ${new Date().getFullYear()}`
         }
       }
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      allowNull: false
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      allowNull: false
     }
   }, {
     tableName: 'books',
-    timestamps: true
+    timestamps: false
   });
 
   Book.associate = function(models) {

@@ -1,8 +1,8 @@
 extends ../layout
 
 block content
-  h1 Book: #{book.title}
-  form(method='post', action='/books/' + book.id)
+  h1= book.title ? 'Book: ' + book.title : 'Edit Book'
+  form(method='post', action='/books/' + book.id, novalidate)
     input(type='hidden', name='_method', value='PUT')
     if errors && errors.length
       h2.error Oooops!
@@ -11,13 +11,13 @@ block content
           li= msg
     p
       label(for='title') Title
-      input#title(name='title', type='text', value=book.title || '', required)
+      input#title(name='title', type='text', value=book.title || '')
     p
       label(for='author') Author
-      input#author(name='author', type='text', value=book.author || '', required)
+      input#author(name='author', type='text', value=book.author || '')
     p
       label(for='genre') Genre
-      input#genre(name='genre', type='text', value=book.genre || '', required)
+      input#genre(name='genre', type='text', value=book.genre || '')
     p
       label(for='first_published') First Published
       input#first_published(name='first_published', type='text', value=book.first_published || '')

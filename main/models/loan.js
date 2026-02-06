@@ -57,18 +57,10 @@ module.exports = (sequelize, DataTypes) => {
           msg: 'Returned on must be a valid date'
         }
       }
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      allowNull: false
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      allowNull: false
     }
   }, {
     tableName: 'loans',
-    timestamps: true
+    timestamps: false
   });
 
   Loan.associate = function(models) {

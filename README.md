@@ -2,38 +2,38 @@
 
 ## Created By
 
-- Name:
+- Name: Todd Shevlin
 - Date Completed:
 
 ---
 
 ## Tools Used
 
-_List all the AI tools you utilized to complete the project._
+- Cursor (primary)
+- Github Copilot (code completion)
+- Windsurf (code completion)
 
-- _(AI Tool One)_
-- _(AI Tool Two)_
-- _(AI Tool Three)_
+- Claude was considered, but most good features come with paid subscription
 
 ---
 
 ## What Worked
 
-_Describe what parts of the project went smoothly or turned out well. This could include specific features, code organization, approaches to prompts or workflow habits._
+Overall the tool worked very well.  Saved a lot of time and wrote pretty good code, while also good at resolving issues.
 
-- _(What Worked 1)_
-- _(What Worked 2)_
-- _(What Worked 3)_
+- Building db models, and connecting and syncing worked great.  Though it would have been better if I had it build ALL models initially, rather than waiting to add Loans.
+- I love that it automatically creates pug views from html markup and adds them to routes and renders.
+- Creating standard routes and API calls with minimal prompting.  It knows CRUD are going to be standard, so it knows to create them and builds them consistently
 
 ---
 
 ## What Didn't Work
 
-_Explain what parts of the project were challenging or didn't go as planned. Did you hit bugs, confusion, or dead ends?_
+If a prompt isn't very specific, several follow-up prompts are needed to fix the misses. I typically asked it what a good prompt looks like for larger tasks.  Some fixes didn't work.  At one point the project got corrupted, I'm not sure if this is due to AI, node or something else.
 
-- _(What Didn't Work 1)_
-- _(What Didn't Work 2)_
-- _(What Didn't Work 3)_
+- A lot of follow-up prompts for missed details (partially user error)
+- Some fixes didn't work despite numerous attempts
+- The further down the "prompt rabbit hole" you go, the more code is added making it more difficult to read, debug, and modify
 
 ---
 
@@ -41,16 +41,24 @@ _Explain what parts of the project were challenging or didn't go as planned. Did
 
 ### Pros
 
-_What were the benefits of using an AI assistant during this project?_
+Overall using the AI tools is a huge help.  It takes care most of the setup grind so you can focus on what the app actually needs to do.  It also plans ahead for features you will likely ask for.
 
-- _(Benefit 1)_
-- _(Benefit 2)_
-- _(Benefit 3)_
+- Huge time saver.  It built in an hour what would typically take several days.  
+
+- It looks at the entire code base to get the context, reads existing patterns, naming conventions, etc.
+
+- It is pretty good (though not infallible) at fixing issues and errors.  At one point in a follow-up prompt it found one of it's previous syntax errors and corrected it.
+
+- It writes pretty good code using modern syntax and design patterns (ternary and spread operators, async/await, etc.).
 
 ### Cons
 
-_What were the downsides, limitations, or challenges when relying on AI during this project?_
+Cons are relatively few, versus not using any AI tools.
 
-- _(Downside 1)_
-- _(Downside 2)_
-- _(Downside 3)_
+- Limited number of prompts for free users.  Though most tools are $20 a month or less, which is definitely worth the time it saves you if you will be doing any development.
+
+- Some of the code can get "bloated" and difficult to read when attempting to add features or fix issues, especially if they don't work the first time.  It continues to re-write and add additional code.
+
+- By default it responds assuming you are about an intermediate developer.  If you are a beginner prompting can be more difficult, and understanding the responses and code will be challenging if you need to modify or debug it.  You still have to understand the stack and where different functions are performed in order to tell the AI where to look and what to do.
+
+- The biggest con of them all. It almost works too well.  If we become too reliant on AI, developers will become lazy and forget the skills they learned.  As it becomes more ubiquitous, I foresee a time when systems break and there is no one left that knows how to fix them.

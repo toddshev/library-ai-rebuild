@@ -2,7 +2,7 @@ extends ../layout
 
 block content
   h1 New Patron
-  form(method='post', action='/patrons')
+  form(method='post', action='/patrons', novalidate)
     if errors && errors.length
       h2.error Oooops!
       ul.error

@@ -38,20 +38,17 @@ block content
           td
             if !loan.returned_on
               a.button(href='/loans/' + loan.id + '/return') Return Book
-      if loans.length === 0
-        tr
-          td(colspan='6').no-results No Results Found
   if totalPages > 1
     nav.pagination
       ul
         if page > 1
           li
-            a(href='?page=' + (page - 1) + '&filter=' + filter + (search ? '&search=' + search : '')) Previous
+            a(href='?page=' + (page - 1) + '&filter=' + filter) Previous
         - let p = 1
         while p <= totalPages
           li(class=(p === page ? 'active' : ''))
-            a(href='?page=' + p + '&filter=' + filter + (search ? '&search=' + search : ''))= p
+            a(href='?page=' + p + '&filter=' + filter)= p
           - p++
         if page < totalPages
           li
-            a(href='?page=' + (page + 1) + '&filter=' + filter + (search ? '&search=' + search : '')) Next
+            a(href='?page=' + (page + 1) + '&filter=' + filter) Next

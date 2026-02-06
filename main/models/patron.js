@@ -79,18 +79,10 @@ module.exports = (sequelize, DataTypes) => {
           msg: 'Zip code must be an integer'
         }
       }
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      allowNull: false
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      allowNull: false
     }
   }, {
     tableName: 'patrons',
-    timestamps: true
+    timestamps: false
   });
 
   Patron.associate = function(models) {

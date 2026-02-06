@@ -19,14 +19,8 @@ var listPatrons = async function (req, res, next) {
         { last_name: { [Op.like]: '%' + term + '%' } },
         { email: { [Op.like]: '%' + term + '%' } },
         { address: { [Op.like]: '%' + term + '%' } },
-        seq.where(
-          seq.cast(seq.col('library_id'), 'VARCHAR'),
-          { [Op.like]: '%' + term + '%' }
-        ),
-        seq.where(
-          seq.cast(seq.col('zip_code'), 'VARCHAR'),
-          { [Op.like]: '%' + term + '%' }
-        )
+        seq.where(seq.cast(seq.col('library_id'), 'TEXT'), { [Op.like]: '%' + term + '%' }),
+        seq.where(seq.cast(seq.col('zip_code'), 'TEXT'), { [Op.like]: '%' + term + '%' })
       ];
     }
     const { count, rows: patrons } = await db.Patron.findAndCountAll({
@@ -51,19 +45,30 @@ router.get('/', listPatrons);
 router.get('', listPatrons);
 
 /** GET /patrons/new - new patron form (must be before /:id) */
-router.get('/new', function (req, res) {
-  res.render('patrons/new_patron', { patron: {}, errors: [] });
+router.get('/new', async function (req, res, next) {
+  try {
+    const max = await db.Patron.max('library_id');
+    const patron = { library_id: (max == null ? 0 : max) + 1 };
+    res.render('patrons/new_patron', { patron, errors: [] });
+  } catch (err) {
+    next(err);
+  }
 });
 
 /** POST /patrons - create patron */
 router.post('/', async function (req, res, next) {
   try {
+    let libraryId = req.body.library_id ? parseInt(req.body.library_id, 10) : null;
+    if (libraryId == null || isNaN(libraryId)) {
+      const max = await db.Patron.max('library_id');
+      libraryId = (max == null ? 0 : max) + 1;
+    }
     await db.Patron.create({
       first_name: req.body.first_name,
       last_name: req.body.last_name,
       address: req.body.address,
       email: req.body.email,
-      library_id: req.body.library_id ? parseInt(req.body.library_id, 10) : null,
+      library_id: libraryId,
       zip_code: req.body.zip_code ? parseInt(req.body.zip_code, 10) : null
     });
     res.redirect('/patrons');
@@ -93,25 +98,16 @@ router.get('/:id', async function (req, res, next) {
 /** GET /patrons/:id/edit - edit patron form */
 router.get('/:id/edit', async function (req, res, next) {
   try {
-    const patron = await db.Patron.findByPk(req.params.id, {
-      include: [
-        {
-          model: db.Loan,
-          as: 'loans',
-          include: [{ model: db.Book, as: 'Book', attributes: ['id', 'title'] }]
-        }
-      ]
-    });
+    const patron = await db.Patron.findByPk(req.params.id);
     if (!patron) return next(createError(404, 'Patron not found'));
-    const loans = (patron.loans || []).sort((a, b) => (b.loaned_on || '').localeCompare(a.loaned_on || ''));
-    res.render('patrons/update_patron', { patron, loans, errors: [] });
+    res.render('patrons/update_patron', { patron, errors: [] });
   } catch (err) {
     next(err);
   }
 });
 
-/** PUT /patrons/:id - update patron */
-router.put('/:id', async function (req, res, next) {
+/** Update patron handler (shared by PUT and POST) */
+var updatePatron = async function (req, res, next) {
   try {
     const patron = await db.Patron.findByPk(req.params.id);
     if (!patron) return next(createError(404, 'Patron not found'));
@@ -122,29 +118,22 @@ router.put('/:id', async function (req, res, next) {
       email: req.body.email,
       library_id: req.body.library_id ? parseInt(req.body.library_id, 10) : patron.library_id,
       zip_code: req.body.zip_code ? parseInt(req.body.zip_code, 10) : null
-    });
+    }, { validate: true });
     res.redirect('/patrons');
   } catch (err) {
     if (err.name === 'SequelizeValidationError') {
       const errors = err.errors.map(e => e.message);
-      const patronWithLoans = await db.Patron.findByPk(req.params.id, {
-        include: [
-          {
-            model: db.Loan,
-            as: 'loans',
-            include: [{ model: db.Book, as: 'Book', attributes: ['id', 'title'] }]
-          }
-        ]
-      });
-      const loans = patronWithLoans ? (patronWithLoans.loans || []).sort((a, b) => (b.loaned_on || '').localeCompare(a.loaned_on || '')) : [];
+      const patron = await db.Patron.findByPk(req.params.id);
       return res.status(422).render('patrons/update_patron', {
-        patron: { ...patronWithLoans.toJSON(), ...req.body },
-        loans,
+        patron: { ...patron.toJSON(), ...req.body },
         errors
       });
     }
     next(err);
   }
-});
+};
+
+router.put('/:id', updatePatron);
+router.post('/:id', updatePatron);
 
 module.exports = router;

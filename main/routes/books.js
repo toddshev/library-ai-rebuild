@@ -14,15 +14,22 @@ var listBooks = async function (req, res, next) {
       const Op = db.Sequelize.Op;
       const seq = db.sequelize;
       const term = search.trim();
-      where[Op.or] = [
+      const orConditions = [
         { title: { [Op.like]: '%' + term + '%' } },
         { author: { [Op.like]: '%' + term + '%' } },
-        { genre: { [Op.like]: '%' + term + '%' } },
+        { genre: { [Op.like]: '%' + term + '%' } }
+      ];
+      const yearNum = parseInt(term, 10);
+      if (!isNaN(yearNum) && String(yearNum) === term) {
+        orConditions.push({ first_published: yearNum });
+      }
+      orConditions.push(
         seq.where(
-          seq.cast(seq.col('first_published'), 'VARCHAR'),
+          seq.cast(seq.col('first_published'), 'TEXT'),
           { [Op.like]: '%' + term + '%' }
         )
-      ];
+      );
+      where[Op.or] = orConditions;
     }
     const { count, rows: books } = await db.Book.findAndCountAll({
       where,
@@ -94,8 +101,8 @@ router.get('/:id/edit', async function (req, res, next) {
   }
 });
 
-/** PUT /books/:id - update book */
-router.put('/:id', async function (req, res, next) {
+/** Update book handler (shared by PUT and POST) */
+var updateBook = async function (req, res, next) {
   try {
     const book = await db.Book.findByPk(req.params.id);
     if (!book) return next(createError(404, 'Book not found'));
@@ -104,7 +111,7 @@ router.put('/:id', async function (req, res, next) {
       author: req.body.author,
       genre: req.body.genre,
       first_published: req.body.first_published ? parseInt(req.body.first_published, 10) : null
-    });
+    }, { validate: true });
     res.redirect('/books');
   } catch (err) {
     if (err.name === 'SequelizeValidationError') {
@@ -117,6 +124,9 @@ router.put('/:id', async function (req, res, next) {
     }
     next(err);
   }
-});
+};
+
+router.put('/:id', updateBook);
+router.post('/:id', updateBook);
 
 module.exports = router;

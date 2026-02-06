@@ -2,7 +2,7 @@ extends ../layout
 
 block content
   h1 New Book
-  form(method='post', action='/books')
+  form(method='post', action='/books', novalidate)
     if errors && errors.length
       h2.error Oooops!
       ul.error

@@ -2,7 +2,7 @@ extends ../layout
 
 block content
   h1 New Loan
-  form(method='post', action='/loans')
+  form(method='post', action='/loans', novalidate)
     if errors && errors.length
       h2.error Oooops!
       ul.error

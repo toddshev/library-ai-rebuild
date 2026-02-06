@@ -12,6 +12,11 @@ const db = {};
 let sequelize;
 if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
+} else if (config.dialect === 'sqlite' && config.storage) {
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: path.isAbsolute(config.storage) ? config.storage : path.join(__dirname, '..', config.storage)
+  });
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
