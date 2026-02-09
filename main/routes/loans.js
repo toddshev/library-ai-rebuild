@@ -50,14 +50,34 @@ var listLoans = async function (req, res, next) {
       distinct: true
     });
     const totalPages = Math.ceil(count / limit) || 1;
-    res.render('loans/all_loans', {
-      loans,
-      filter: filter,
-      search: search || '',
-      page: Number(page),
-      totalPages,
-      count
-    });
+    if (!filter || filter === 'all') {
+      res.render(`loans/all_loans`, {
+        loans,
+        filter: 'all',
+        search: search || '',
+        page: Number(page),
+        totalPages,
+        count
+      });
+    } else if (filter === 'overdue') {
+      res.render(`loans/overdue_loans`, {
+        loans,
+        filter: 'overdue',
+        search: search || '',
+        page: Number(page),
+        totalPages,
+        count
+      });
+    } else if (filter === 'active') {
+      res.render(`loans/active_loans`, {
+        loans,
+        filter: 'active',
+        search: search || '',
+        page: Number(page),
+        totalPages,
+        count
+      });
+    }
   } catch (err) {
     next(err);
   }
