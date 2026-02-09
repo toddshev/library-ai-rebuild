@@ -29,3 +29,28 @@ block content
       input#zip_code(name='zip_code', type='text', value=patron.zip_code || '')
     p
       input(type='submit', value='Update')
+
+  if loans && loans.length > 0
+    h2 Loan History
+    table
+      thead
+        tr
+          th Book
+          th Loaned on
+          th Return by
+          th Returned on
+          th Action
+      tbody
+        each loan in loans
+          tr
+            td
+              a(href='/books/' + loan.Book.id)= loan.Book.title
+            td= loan.loaned_on
+            td= loan.return_by
+            td= loan.returned_on || '—'
+            td
+              if !loan.returned_on
+                a.button(href='/loans/' + loan.id + '/return') Return Book
+  else if loans && loans.length === 0
+    h2 Loan History
+    p.no-results No loans yet.

@@ -95,12 +95,17 @@ router.get('/:id', async function (req, res, next) {
   }
 });
 
-/** GET /patrons/:id/edit - edit patron form */
+/** GET /patrons/:id/edit - edit patron form with loan history */
 router.get('/:id/edit', async function (req, res, next) {
   try {
-    const patron = await db.Patron.findByPk(req.params.id);
+    const patron = await db.Patron.findByPk(req.params.id, {
+      include: [
+        { model: db.Loan, as: 'loans', include: [{ model: db.Book, as: 'Book', attributes: ['id', 'title'] }] }
+      ]
+    });
     if (!patron) return next(createError(404, 'Patron not found'));
-    res.render('patrons/update_patron', { patron, errors: [] });
+    const loans = (patron.loans || []).sort((a, b) => new Date(b.loaned_on) - new Date(a.loaned_on));
+    res.render('patrons/update_patron', { patron, loans, errors: [] });
   } catch (err) {
     next(err);
   }
@@ -123,9 +128,16 @@ var updatePatron = async function (req, res, next) {
   } catch (err) {
     if (err.name === 'SequelizeValidationError') {
       const errors = err.errors.map(e => e.message);
-      const patron = await db.Patron.findByPk(req.params.id);
+      const patronWithLoans = await db.Patron.findByPk(req.params.id, {
+        include: [
+          { model: db.Loan, as: 'loans', include: [{ model: db.Book, as: 'Book', attributes: ['id', 'title'] }] }
+        ]
+      });
+      const patronData = { ...patronWithLoans.toJSON(), ...req.body };
+      const loans = (patronWithLoans.loans || []).sort((a, b) => new Date(b.loaned_on) - new Date(a.loaned_on));
       return res.status(422).render('patrons/update_patron', {
-        patron: { ...patron.toJSON(), ...req.body },
+        patron: patronData,
+        loans,
         errors
       });
     }
