@@ -1,11 +1,11 @@
-var express = require('express');
-var router = express.Router();
-var db = require('../models');
-var createError = require('http-errors');
-var Op = db.Sequelize.Op;
+const express = require('express');
+const router = express.Router();
+const db = require('../models');
+const createError = require('http-errors');
+const Op = db.Sequelize.Op;
 
 /** GET /loans - list loans (filter: all | overdue | active), search across loan + book + patron */
-var listLoans = async function (req, res, next) {
+const listLoans = async function (req, res, next) {
   try {
     const { filter = 'all', search, page = 1 } = req.query;
     const limit = 10;
